@@ -1,0 +1,32 @@
+name: Update sticker list
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - '**.jpg'
+      - '**.jpeg'
+      - '**.png'
+      - '**.gif'
+      - '**.webp'
+
+jobs:
+  update-list:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Generate stickers.json
+        run: |
+          find . -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.gif' -o -iname '*.webp' \) \
+            | sed 's|^\./||' | sort | jq -R -s 'split("\n") | map(select(. != ""))' > stickers.json
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "actions@github.com"
+          git add stickers.json
+          git diff --cached --quiet || git commit -m "chore: update sticker list"
+          git push
